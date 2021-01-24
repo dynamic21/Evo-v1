@@ -1,4 +1,4 @@
-# Evo - Evolving Inteligence
+# Evo - Evolving General Inteligence
 
 ## Goal
 

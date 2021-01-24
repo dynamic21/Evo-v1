@@ -113,7 +113,7 @@ public:
 		}
 	}
 
-	void evaluate(vector<int> input)
+	vector<double> evaluate(vector<int> input)
 	{
 		int i, j, l;
 		double sum;
@@ -148,6 +148,19 @@ public:
 				brainActivity[i + 1][j] = isActive;
 			}
 		}
+		vector<double> output;
+		for (i = 0; i < structure[structureLengthMinusOne]; i++)
+		{
+			if (brainActivity[structureLengthMinusOne][i] == 0)
+			{
+				output.push_back(0);
+			}
+			else
+			{
+				output.push_back(brain[structureLengthMinusOne][i]);
+			}
+		}
+		return output;
 	}
 
 	void info()
@@ -213,8 +226,7 @@ public:
 class game
 {
 public:
-	int gameState[boardSize][boardSize];
-	vector<agent *> players;
+	int boardState[boardSize][boardSize];
 
 	void initialize()
 	{
@@ -223,31 +235,140 @@ public:
 		{
 			for (j = 0; j < boardSize; j++)
 			{
-				gameState[i][j] = 0;
+				boardState[i][j] = 0;
 			}
 		}
 	}
 
-	void addAgentToGame(agent *joe)
+	void info()
 	{
-		players.push_back(joe);
+		int i, j;
+		for (i = 0; i < boardSize; i++)
+		{
+			for (j = 0; j < boardSize; j++)
+			{
+				cout << boardState[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+
+	vector<int> getState(int team)
+	{
+		int i, j;
+		vector<int> input;
+		for (i = 0; i < boardSize; i++)
+		{
+			for (j = 0; j < boardSize; j++)
+			{
+				input.push_back(boardState[i][j] * team);
+			}
+		}
+		return input;
+	}
+
+	int isGameRunning()
+	{
+		vector<int> winState = {0, 0, 0, 0, 0, 0, 0, 0};
+		int i;
+		bool filled = true;
+		for (i = 0; i < boardSize; i++)
+		{
+			winState[0] += boardState[0][i];
+			winState[1] += boardState[1][i];
+			winState[2] += boardState[2][i];
+			winState[3] += boardState[i][0];
+			winState[4] += boardState[i][1];
+			winState[5] += boardState[i][2];
+			winState[6] += boardState[i][i];
+			winState[7] += boardState[i][2 - i];
+		}
+		for (i = 0; i < 8; i++)
+		{
+			if (winState[i] == -3)
+			{
+				return -1;
+			}
+			if (winState[i] == 3)
+			{
+				return 1;
+			}
+			if (winState[i] == 0)
+			{
+				filled = false;
+			}
+		}
+		if (filled)
+		{
+			return 0;
+		}
+		return 2;
+	}
+
+	void start(agent *firstPlayer, agent *secondPlayer)
+	{
+		initialize();
+		int i, j, winner, pos;
+		int team = 1;
+		double max;
+		bool running = true;
+		agent &player1 = *firstPlayer;
+		agent &player2 = *secondPlayer;
+		vector<double> output;
+		while (running)
+		{
+			team = 0 - team;
+			if (team == 1)
+			{
+				output = player1.evaluate(getState(1));
+			}
+			else
+			{
+				output = player2.evaluate(getState(-1));
+			}
+			pos = -1;
+			for (i = 0; i < boardSize * boardSize; i++)
+			{
+				if (boardState[i / boardSize][i % boardSize] == 0)
+				{
+					if (pos == -1 || output[i] > max)
+					{
+						max = output[i];
+						pos = i;
+					}
+				}
+			}
+			boardState[pos / boardSize][pos % boardSize] = team;
+			winner = isGameRunning();
+			cout << pos << endl
+				 << endl;
+			info();
+			if (winner != 2)
+			{
+				running = false;
+			}
+		}
+		player1.score += winner + 1;
+		player2.score += 1 - winner;
 	}
 };
 
-vector<agent> globalAgentVector;
+vector<agent> allAgents;
 
-vector<agent *> globalAgentPointerVector;
+vector<agent *> allAgentPointers;
 
-void timeFunction()
-{
-	//clock_t start = clock();
-	//for (int i = 0; i < 1000000; i++) {
-	//bill.evaluate(game);
-	//}
-	//cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
-}
+// void timeFunction()
+// {
+// 	clock_t start = clock();
+// 	int a = 1;
+// 	for (int i = 0; i < 10000000; i++) {
+// 		a = 0 - a;
+// 	}
+// 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
+// }
 
-void fillGlobalAgentVector(int num, vector<int> blueprint)
+void collectAllAgents(int num, vector<int> blueprint)
 {
 	int i;
 	for (i = 0; i < num; i++)
@@ -255,16 +376,41 @@ void fillGlobalAgentVector(int num, vector<int> blueprint)
 		agent joe;
 		joe.initialize(blueprint);
 		joe.mutate(1.0);
-		globalAgentVector.push_back(joe);
+		allAgents.push_back(joe);
 	}
 }
 
-void fillGlobalAgentPointerVector()
+void collectAllAgentPointers()
 {
 	int i;
-	for (i = 0; i < globalAgentVector.size(); i++)
+	for (i = 0; i < allAgents.size(); i++)
 	{
-		globalAgentPointerVector.push_back(&globalAgentVector[i]);
+		allAgentPointers.push_back(&allAgents[i]);
+	}
+}
+
+void matchMakeGlobalPopulation(double percent)
+{
+	percent *= 0.5;
+	int i, j, tempRand;
+	int totalAgents = allAgentPointers.size();
+	int numberOfBattles = (int)(totalAgents * percent) + 1;
+	agent *temp;
+	for (i = 0; i < totalAgents; i++)
+	{
+		temp = allAgentPointers[i];
+		tempRand = rand() % totalAgents;
+		allAgentPointers[i] = allAgentPointers[tempRand];
+		allAgentPointers[tempRand] = temp;
+	}
+	for (i = 0; i < totalAgents; i++)
+	{
+		for (j = 0; j < numberOfBattles; j++)
+		{
+			game match;
+			match.start(allAgentPointers[i], allAgentPointers[(i + j + 1) % totalAgents]);
+			match.info();
+		}
 	}
 }
 
@@ -273,13 +419,17 @@ int main()
 	srand(time(NULL));
 	randDouble();
 
-	fillGlobalAgentVector(5, {9, 9, 9});
-	fillGlobalAgentPointerVector();
+	collectAllAgents(3, {9, 9, 9});
+	collectAllAgentPointers();
+	matchMakeGlobalPopulation(0.2);
 	int i;
-	for (i = 0; i < globalAgentPointerVector.size(); i++)
+	for (i = 0; i < allAgents.size(); i++)
 	{
-		agent &joe = *globalAgentPointerVector[i];
-		joe.score += i + 10;
-		cout << globalAgentVector[i].score << endl;
+		cout << allAgents[i].score << endl;
 	}
+	// agent joe;
+	// joe.initialize({9, 9, 9});
+	// joe.mutate(1.0);
+	// joe.evaluate({1, 2, 3, 4, 5, 6, 7, 8, 9});
+	// joe.info();
 }
