@@ -6,15 +6,8 @@
 
 using namespace std;
 
-double randVal() {
+double randDouble() {
 	return ((double)rand() / RAND_MAX) * 2 - 1;
-}
-
-double max(double x, double y) {
-	if (x > y) {
-		return x;
-	}
-	return y;
 }
 
 class ticTacToeState {
@@ -57,13 +50,13 @@ public:
 		for (i = 0; i < structureLengthMinusOne; i++) {
 			bias.push_back({});
 			for (j = 0; j < structure[i + 1]; j++) {
-				bias[i].push_back(randVal());
+				bias[i].push_back(randDouble());
 			}
 			weights.push_back({});
 			for (j = 0; j < structure[i]; j++) {
 				weights[i].push_back({});
 				for (l = 0; l < structure[i + 1]; l++) {
-					weights[i][j].push_back(randVal());
+					weights[i][j].push_back(randDouble());
 				}
 			}
 		}
@@ -81,13 +74,6 @@ public:
 		}
 		for (i = 0; i < structureLengthMinusOne; i++) {
 			for (j = 0; j < structure[i + 1]; j++) {
-				/*
-				sum = 0;
-				for (l = 0; l < structure[i]; l++) {
-					sum += weights[i][l][j] * brain[i][l];
-				}
-				brain[i + 1][j] = max(0, sum + bias[i][j]);
-				*/
 				isActive = false;
 				sum = 0;
 				for (l = 0; l < structure[i]; l++) {
@@ -152,7 +138,7 @@ public:
 int main()
 {
 	srand(time(NULL));
-	randVal();
+	randDouble();
 
 	agent bill;
 	bill.initialize({ 9, 9, 9});
