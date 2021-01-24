@@ -398,7 +398,7 @@ void collectAllAgents(int num, vector<int> blueprint)
 	{
 		agent joe;
 		joe.initialize(blueprint);
-		// joe.mutate(0.1);
+		joe.mutate(0.1);
 		allAgents.push_back(joe);
 	}
 }
@@ -456,33 +456,27 @@ void allAgentSelection(double percent)
 	}
 }
 
-// void timeFunction()
-// {
-// 	clock_t start = clock();
-// 	int a = 1;
-// 	for (int i = 0; i < 10000000; i++) {
-// 		a = 0 - a;
-// 	}
-// 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
-// }
-
-int main()
+void timeFunction()
 {
-	srand(time(NULL));
-	randDouble();
-
-	collectAllAgents(100, {9, 9});
+	clock_t start = clock();
 	int i;
 	for (i = 0; i < 100; i++)
 	{
 		collectAllAgentPointers();
 		matchMakeGlobalPopulation(0.3);
 		allAgentSelection(0.1);
-		if (i % 10 == 0)
-		{
-			cout << (double)i / 100 << endl;
-		}
 	}
+	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
+}
+
+int main()
+{
+	srand(time(NULL));
+	randDouble();
+
+	collectAllAgents(100, {9, 4, 9});
+	int i;
+	timeFunction();
 	agent preBest = allAgents[0].copy();
 	for (i = 0; i < 1000; i++)
 	{
