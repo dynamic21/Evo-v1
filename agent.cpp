@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 #define boardSize 3
 
 using namespace std;
@@ -257,7 +258,7 @@ public:
 				}
 				if (boardState[i][j] == 0)
 				{
-					cout << "  ";
+					cout << "- ";
 				}
 			}
 			cout << endl;
@@ -279,58 +280,75 @@ public:
 		return input;
 	}
 
-	int getWinner()
+	int gameOver(int mx, int my, int team)
 	{
-		vector<int> winState = {0, 0, 0, 0, 0, 0, 0, 0};
+		int connectionDirections[4][2] = {{1, -1}, {1, 0}, {1, 1}, {0, 1}};
 		int i;
-		bool filled = true;
-		for (i = 0; i < boardSize; i++)
+		int forwardConnections, backwardConnections;
+		int px, py;
+		for (i = 0; i < 4; i++)
 		{
-			winState[0] += boardState[0][i];
-			winState[1] += boardState[1][i];
-			winState[2] += boardState[2][i];
-			winState[3] += boardState[i][0];
-			winState[4] += boardState[i][1];
-			winState[5] += boardState[i][2];
-			winState[6] += boardState[i][i];
-			winState[7] += boardState[i][2 - i];
-		}
-		for (i = 0; i < 8; i++)
-		{
-			if (winState[i] == -3)
+			px = mx;
+			py = my;
+			forwardConnections = 0;
+			while (true)
 			{
-				return -1;
+				px += connectionDirections[i][0];
+				py += connectionDirections[i][1];
+				if (px == -1 || px == boardSize)
+				{
+					break;
+				}
+				if (py == -1 || py == boardSize)
+				{
+					break;
+				}
+				if (boardState[px][py] != team)
+				{
+					break;
+				}
+				forwardConnections++;
 			}
-			if (winState[i] == 3)
+			px = mx;
+			py = my;
+			backwardConnections = 0;
+			while (true)
 			{
-				return 1;
+				px -= connectionDirections[i][0];
+				py -= connectionDirections[i][1];
+				if (px == -1 || px == boardSize)
+				{
+					break;
+				}
+				if (py == -1 || py == boardSize)
+				{
+					break;
+				}
+				if (boardState[px][py] != team)
+				{
+					break;
+				}
+				backwardConnections++;
 			}
-		}
-		for (i = 0; i < 9; i++)
-		{
-			if (boardState[i / boardSize][i % boardSize] == 0)
+			if (1 + forwardConnections + backwardConnections >= boardSize)
 			{
-				filled = false;
+				return true;
 			}
 		}
-		if (filled)
-		{
-			return 0;
-		}
-		return 2;
+		return false;
 	}
 
-	void start(agent *firstPlayer, agent *secondPlayer)
+	void start(agent *firstPlayer, agent *secondPlayer, bool viewMatch)
 	{
 		initialize();
-		int i, j, winner, pos;
+		int i, j, pos;
+		int winner = 0;
 		int team = 1;
 		double max;
-		bool running = true;
 		agent &player1 = *firstPlayer;
 		agent &player2 = *secondPlayer;
 		vector<double> output;
-		while (running)
+		for (i = 0; i < 9; i++)
 		{
 			team = 0 - team;
 			if (team == 1)
@@ -342,22 +360,26 @@ public:
 				output = player2.evaluate(getState(-1));
 			}
 			pos = -1;
-			for (i = 0; i < boardSize * boardSize; i++)
+			for (j = 0; j < boardSize * boardSize; j++)
 			{
-				if (boardState[i / boardSize][i % boardSize] == 0)
+				if (boardState[j / boardSize][j % boardSize] == 0)
 				{
-					if (pos == -1 || output[i] > max)
+					if (pos == -1 || output[j] > max)
 					{
-						max = output[i];
-						pos = i;
+						max = output[j];
+						pos = j;
 					}
 				}
 			}
 			boardState[pos / boardSize][pos % boardSize] = team;
-			winner = getWinner();
-			if (winner != 2)
+			if (viewMatch)
 			{
-				running = false;
+				info();
+			}
+			if (gameOver(pos / boardSize, pos % boardSize, team))
+			{
+				winner = team;
+				break;
 			}
 		}
 		player1.score += winner + 1;
@@ -369,16 +391,6 @@ vector<agent> allAgents;
 
 vector<agent *> allAgentPointers;
 
-// void timeFunction()
-// {
-// 	clock_t start = clock();
-// 	int a = 1;
-// 	for (int i = 0; i < 10000000; i++) {
-// 		a = 0 - a;
-// 	}
-// 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
-// }
-
 void collectAllAgents(int num, vector<int> blueprint)
 {
 	int i;
@@ -386,7 +398,7 @@ void collectAllAgents(int num, vector<int> blueprint)
 	{
 		agent joe;
 		joe.initialize(blueprint);
-		joe.mutate(1.0);
+		// joe.mutate(0.1);
 		allAgents.push_back(joe);
 	}
 }
@@ -394,8 +406,10 @@ void collectAllAgents(int num, vector<int> blueprint)
 void collectAllAgentPointers()
 {
 	int i;
+	allAgentPointers.clear();
 	for (i = 0; i < allAgents.size(); i++)
 	{
+		allAgents[i].score = 0;
 		allAgentPointers.push_back(&allAgents[i]);
 	}
 }
@@ -419,25 +433,84 @@ void matchMakeGlobalPopulation(double percent)
 		for (j = 0; j < numberOfBattles; j++)
 		{
 			game match;
-			match.start(allAgentPointers[i], allAgentPointers[(i + j + 1) % totalAgents]);
-			match.info();
+			match.start(allAgentPointers[i], allAgentPointers[(i + j + 1) % totalAgents], false);
+			match.start(allAgentPointers[(i + j + 1) % totalAgents], allAgentPointers[i], false);
 		}
 	}
 }
+
+bool operator<(agent a1, agent a2)
+{
+	return a1.score > a2.score;
+}
+
+void allAgentSelection(double percent)
+{
+	sort(allAgents.begin(), allAgents.begin() + allAgents.size());
+	int i;
+	int top = (int)(allAgents.size() * percent) + 1;
+	for (i = top; i < allAgents.size(); i++)
+	{
+		allAgents[i] = allAgents[i % top].copy();
+		allAgents[i].mutate(0.1);
+	}
+}
+
+// void timeFunction()
+// {
+// 	clock_t start = clock();
+// 	int a = 1;
+// 	for (int i = 0; i < 10000000; i++) {
+// 		a = 0 - a;
+// 	}
+// 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
+// }
 
 int main()
 {
 	srand(time(NULL));
 	randDouble();
 
-	collectAllAgents(4, {9, 9, 9});
-	collectAllAgentPointers();
-	matchMakeGlobalPopulation(0.2);
+	collectAllAgents(100, {9, 9});
 	int i;
-	for (i = 0; i < allAgents.size(); i++)
+	for (i = 0; i < 100; i++)
 	{
-		cout << allAgents[i].score << endl;
+		collectAllAgentPointers();
+		matchMakeGlobalPopulation(0.3);
+		allAgentSelection(0.1);
+		if (i % 10 == 0)
+		{
+			cout << (double)i / 100 << endl;
+		}
 	}
+	agent preBest = allAgents[0].copy();
+	for (i = 0; i < 1000; i++)
+	{
+		collectAllAgentPointers();
+		matchMakeGlobalPopulation(0.3);
+		allAgentSelection(0.1);
+		if (i % 10 == 0)
+		{
+			cout << (double)i / 1000 << endl;
+		}
+	}
+	agent best = allAgents[0].copy();
+	best.info();
+	preBest.info();
+	game match;
+	best.score = 0;
+	preBest.score = 0;
+	match.start(&preBest, &best, true);
+	cout << "Best's score: " << best.score << " and PreBest's score: " << preBest.score << endl;
+	best.score = 0;
+	preBest.score = 0;
+	match.start(&best, &preBest, true);
+	cout << "Best's score: " << best.score << " and PreBest's score: " << preBest.score << endl;
+
+	// for (i = 0; i < allAgents.size(); i++)
+	// {
+	// 	cout << allAgents[i].score << endl;
+	// }
 	// agent joe;
 	// joe.initialize({9, 9, 9});
 	// joe.mutate(1.0);
