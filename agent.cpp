@@ -387,6 +387,11 @@ public:
 	}
 };
 
+class species
+{
+	
+}
+
 vector<agent> allAgents;
 
 vector<agent *> allAgentPointers;
