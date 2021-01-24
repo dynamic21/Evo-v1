@@ -4,7 +4,12 @@
 #include <ctime>
 #include <algorithm>
 #define boardSize 3
-
+#define topAgentPercentage 0.1
+#define topSpeciesPercentage 0.2
+#define exposurePercentage 0.1 //divide this by 2
+#define logLength 100
+#define mutationRate 0.1
+#define mutateThreshold 1000
 using namespace std;
 
 double randDouble()
@@ -389,42 +394,97 @@ public:
 
 class species
 {
+public:
+	vector<int> structure;
+	vector<agent> agents;
+	int numberOfAgents;
+	double scoreLog[logLength];
+	int stopTimer,logTimer;
+	double currentScore;
+	double maxScore;
 	
-}
-
-vector<agent> allAgents;
-
-vector<agent *> allAgentPointers;
-
-void collectAllAgents(int num, vector<int> blueprint)
-{
-	int i;
-	for (i = 0; i < num; i++)
-	{
-		agent joe;
-		joe.initialize(blueprint);
-		// joe.mutate(0.1);
-		allAgents.push_back(joe);
+	void initialize(){
+		structure.push_back(boardSize*boardSize);
+		structure.push_back(boardSize*boardSize);
+		update();
+		int i;
+		for(i=0; i<numberOfAgents; i++){
+			agent newAgent;
+			newAgent.initialize(structure);
+			newAgent.mutate(0.1);
+			agents.push_back(newAgent);
+		}
+	}
+	
+	void update(){
+		int i;
+		numberOfAgents = 0;
+		for(i=0; i<structure.size(); i++){
+			numberOfAgents += structure[i];
+		}
+		for(i=0; i<logLength; i++){
+			scoreLog[i] = 0;
+		}
+		logTimer = 0;
+		stopTimer = 0;
+		currentScore = 0;
+		maxScore = 0;
+		for(i=0; i<)
+	}
+	
+	species copy(){
+		species newSpecies;
+		int i;
+		for(i=0; i<structure.size(); i++){
+			newSpecies.structure.push_back(structure[i]);
+		}
+		newSpecies.numberOfAgents = numberOfAgents;
+		for(i=0; i<numberOfAgents; i++){
+			newSpecies.agents.push_back(agents[i].copy());
+		}
+	}
+	
+	void updateScore(){
+		int top = (int)(numberOfAgents * topAgentPercentage) + 1;
+		int i;
+		int sum = 0;
+		for(i=0; i<top; i++){
+			sum += agents[i].score;
+		}
+		currentScore += sum/top - scoreLog[logTimer];
+		scoreLog[logTimer] = sum/top;
+		if(currentScore > maxScore){
+			maxScore = currentScore;
+			stopTimer = 0;
+		}
+		logTimer++;
+		if(logTimer == logLength){
+			logTimer = 0;
+		}
+		stopTimer++;
 	}
 }
+
+vector<species> allSpecies;
+vector<agent *> allAgentPointers;
 
 void collectAllAgentPointers()
 {
-	int i;
+	int i,j;
 	allAgentPointers.clear();
-	for (i = 0; i < allAgents.size(); i++)
-	{
-		allAgents[i].score = 0;
-		allAgentPointers.push_back(&allAgents[i]);
+	for(i=0; i<allSpecies.size(); i++){
+		for(j=0; j<allSpecies[i].numberOfAgents; j++){
+			allSpecies[i].agents[j].score = 0;
+			allAgentPointers.push_back(&allSpecies[i].agents[j]);
+		}
 	}
 }
 
-void matchMakeGlobalPopulation(double percent)
+void matchMakeGlobalPopulation()
 {
-	percent *= 0.5;
 	int i, j, tempRand;
 	int totalAgents = allAgentPointers.size();
-	int numberOfBattles = (int)(totalAgents * percent) + 1;
+	int numberOfBattles = (int)(totalAgents * exposurePercentage) + 1;
 	agent *temp;
 	for (i = 0; i < totalAgents; i++)
 	{
@@ -444,16 +504,28 @@ void matchMakeGlobalPopulation(double percent)
 	}
 }
 
+bool updateScores(){
+	int i;
+	bool mutateReady = true;
+	for(i=0; i<allSpecies.size(); i++){
+		allSpecies[i].updateScore();
+		if(allSpecies[i].stopTimer < mutateThreshold){
+			mutateReady = false;
+		}
+	}
+	return mutateReady;
+}
+
 bool operator<(agent a1, agent a2)
 {
 	return a1.score > a2.score;
 }
 
-void allAgentSelection(double percent)
+void allAgentSelection()
 {
 	sort(allAgents.begin(), allAgents.begin() + allAgents.size());
 	int i;
-	int top = (int)(allAgents.size() * percent) + 1;
+	int top = (int)(allAgents.size() * topAgentPercentage) + 1;
 	for (i = top; i < allAgents.size(); i++)
 	{
 		allAgents[i] = allAgents[i % top].copy();
@@ -475,50 +547,9 @@ int main()
 {
 	srand(time(NULL));
 	randDouble();
-
-	collectAllAgents(100, {9, 9});
-	int i;
-	for (i = 0; i < 100; i++)
-	{
-		collectAllAgentPointers();
-		matchMakeGlobalPopulation(0.3);
-		allAgentSelection(0.1);
-		if (i % 10 == 0)
-		{
-			cout << (double)i / 100 << endl;
-		}
-	}
-	agent preBest = allAgents[0].copy();
-	for (i = 0; i < 1000; i++)
-	{
-		collectAllAgentPointers();
-		matchMakeGlobalPopulation(0.3);
-		allAgentSelection(0.1);
-		if (i % 10 == 0)
-		{
-			cout << (double)i / 1000 << endl;
-		}
-	}
-	agent best = allAgents[0].copy();
-	best.info();
-	preBest.info();
-	game match;
-	best.score = 0;
-	preBest.score = 0;
-	match.start(&preBest, &best, true);
-	cout << "Best's score: " << best.score << " and PreBest's score: " << preBest.score << endl;
-	best.score = 0;
-	preBest.score = 0;
-	match.start(&best, &preBest, true);
-	cout << "Best's score: " << best.score << " and PreBest's score: " << preBest.score << endl;
-
-	// for (i = 0; i < allAgents.size(); i++)
-	// {
-	// 	cout << allAgents[i].score << endl;
-	// }
-	// agent joe;
-	// joe.initialize({9, 9, 9});
-	// joe.mutate(1.0);
-	// joe.evaluate({1, 2, 3, 4, 5, 6, 7, 8, 9});
-	// joe.info();
+	
+	species hello;
+	hello.initialize();
+	
+	
 }
