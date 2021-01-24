@@ -247,7 +247,18 @@ public:
 		{
 			for (j = 0; j < boardSize; j++)
 			{
-				cout << boardState[i][j] << " ";
+				if (boardState[i][j] == 1)
+				{
+					cout << "x ";
+				}
+				if (boardState[i][j] == -1)
+				{
+					cout << "O ";
+				}
+				if (boardState[i][j] == 0)
+				{
+					cout << "  ";
+				}
 			}
 			cout << endl;
 		}
@@ -268,7 +279,7 @@ public:
 		return input;
 	}
 
-	int isGameRunning()
+	int getWinner()
 	{
 		vector<int> winState = {0, 0, 0, 0, 0, 0, 0, 0};
 		int i;
@@ -294,7 +305,10 @@ public:
 			{
 				return 1;
 			}
-			if (winState[i] == 0)
+		}
+		for (i = 0; i < 9; i++)
+		{
+			if (boardState[i / boardSize][i % boardSize] == 0)
 			{
 				filled = false;
 			}
@@ -340,10 +354,7 @@ public:
 				}
 			}
 			boardState[pos / boardSize][pos % boardSize] = team;
-			winner = isGameRunning();
-			cout << pos << endl
-				 << endl;
-			info();
+			winner = getWinner();
 			if (winner != 2)
 			{
 				running = false;
@@ -419,7 +430,7 @@ int main()
 	srand(time(NULL));
 	randDouble();
 
-	collectAllAgents(3, {9, 9, 9});
+	collectAllAgents(4, {9, 9, 9});
 	collectAllAgentPointers();
 	matchMakeGlobalPopulation(0.2);
 	int i;
