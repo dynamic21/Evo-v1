@@ -214,6 +214,7 @@ class game
 {
 public:
 	int gameState[boardSize][boardSize];
+	vector<agent *> players;
 
 	void initialize()
 	{
@@ -227,9 +228,9 @@ public:
 		}
 	}
 
-	void addAgentToGame(agent joe)
+	void addAgentToGame(agent *joe)
 	{
-		//
+		players.push_back(joe);
 	}
 };
 
@@ -275,9 +276,10 @@ int main()
 	fillGlobalAgentVector(5, {9, 9, 9});
 	fillGlobalAgentPointerVector();
 	int i;
-	for (i = 0; i < globalAgentVector.size(); i++)
+	for (i = 0; i < globalAgentPointerVector.size(); i++)
 	{
-		agent joe = *globalAgentPointerVector[i];
-		joe.info();
+		agent &joe = *globalAgentPointerVector[i];
+		joe.score += i + 10;
+		cout << globalAgentVector[i].score << endl;
 	}
 }
