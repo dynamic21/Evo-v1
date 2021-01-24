@@ -258,15 +258,26 @@ void fillGlobalAgentVector(int num, vector<int> blueprint)
 	}
 }
 
+void fillGlobalAgentPointerVector()
+{
+	int i;
+	for (i = 0; i < globalAgentVector.size(); i++)
+	{
+		globalAgentPointerVector.push_back(&globalAgentVector[i]);
+	}
+}
+
 int main()
 {
 	srand(time(NULL));
 	randDouble();
 
-	fillGlobalAgentVector(2, {9, 9, 9});
+	fillGlobalAgentVector(5, {9, 9, 9});
+	fillGlobalAgentPointerVector();
 	int i;
 	for (i = 0; i < globalAgentVector.size(); i++)
 	{
-		globalAgentVector[i].info();
+		agent joe = *globalAgentPointerVector[i];
+		joe.info();
 	}
 }
