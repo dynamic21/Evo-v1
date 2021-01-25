@@ -4,15 +4,13 @@
 #include <ctime>
 #include <algorithm>
 #define boardSize 3
-#define topAgentPercentage 0.1
+#define topAgentPercentage 0.2
 #define topSpeciesPercentage 0.2
-#define exposurePercentage 0.1 //divide this by 2
+#define exposurePercentage 0.1 //divide the desired percentage by 2 to get accurate usage
 #define logLength 100
 #define mutationRate 0.1
 #define mutateThreshold 1000
 using namespace std;
-
-// TODO: work on update, better implimentation
 
 double randDouble()
 {
@@ -454,10 +452,10 @@ public:
 
 	void agentSelection()
 	{
-		sort(agents.begin(), agents.begin() + agents.size());
+		sort(agents.begin(), agents.begin() + numberOfAgents);
 		int i;
-		int top = (int)(agents.size() * topAgentPercentage) + 1;
-		for (i = top; i < agents.size(); i++)
+		int top = (int)(numberOfAgents * topAgentPercentage) + 1;
+		for (i = top; i < numberOfAgents; i++)
 		{
 			agents[i] = agents[i % top].copy();
 			agents[i].mutate(0.1);
@@ -502,6 +500,10 @@ public:
 			logTimer = 0;
 		}
 		stopTimer++;
+	}
+	
+	void mutate(){
+		//
 	}
 };
 
@@ -578,6 +580,11 @@ bool operator<(agent a1, agent a2)
 	return a1.score > a2.score;
 }
 
+bool operator<(species s1, species s2)
+{
+	return s1.maxScore > s2.maxScore;
+}
+
 // void timeFunction()
 // {
 // 	clock_t start = clock();
@@ -590,13 +597,18 @@ bool operator<(agent a1, agent a2)
 
 void speciesSelection()
 {
+	sort(allSpecies.begin(), allSpecies.begin() + allSpecies.size());
 	int i;
-	for (i = 0; i < allSpecies.size(); i++)
+	int top = (int)(allSpecies.size() * topSpeciesPercentage) + 1;
+	for (i = top; i < allSpecies.size(); i++)
 	{
-		//
+		allSpecies[i] = allSpecies[i % top].copy();
+		allSpecies[i].mutate();
 		allSpecies[i].updateAllAttributes();
 	}
 }
+
+// TODO: work on species mutate and updateAllAtridutes for both species and agents
 
 int main()
 {
@@ -604,7 +616,8 @@ int main()
 	randDouble();
 
 	collectAllSpecies(1);
-	while (true)
+	int maxLoop = 10;
+	while (maxLoop--)
 	{
 		collectAllAgentPointers();
 		matchMakeGlobalPopulation();
