@@ -12,6 +12,8 @@
 #define mutateThreshold 1000
 using namespace std;
 
+// TODO: work on update, better implimentation
+
 double randDouble()
 {
 	return ((double)rand() / RAND_MAX) * 2 - 1;
@@ -65,39 +67,39 @@ public:
 
 	agent copy()
 	{
-		agent joe;
+		agent newAgent;
 		int i, j, l;
-		joe.score = score;
+		newAgent.score = score;
 		for (i = 0; i < structure.size(); i++)
 		{
-			joe.structure.push_back(structure[i]);
-			joe.brain.push_back({});
-			joe.brainActivity.push_back({});
+			newAgent.structure.push_back(structure[i]);
+			newAgent.brain.push_back({});
+			newAgent.brainActivity.push_back({});
 			for (j = 0; j < structure[i]; j++)
 			{
-				joe.brain[i].push_back(brain[i][j]);
-				joe.brainActivity[i].push_back(brainActivity[i][j]);
+				newAgent.brain[i].push_back(brain[i][j]);
+				newAgent.brainActivity[i].push_back(brainActivity[i][j]);
 			}
 		}
-		joe.structureLengthMinusOne = structure.size() - 1;
+		newAgent.structureLengthMinusOne = structure.size() - 1;
 		for (i = 0; i < structureLengthMinusOne; i++)
 		{
-			joe.bias.push_back({});
+			newAgent.bias.push_back({});
 			for (j = 0; j < structure[i + 1]; j++)
 			{
-				joe.bias[i].push_back(bias[i][j]);
+				newAgent.bias[i].push_back(bias[i][j]);
 			}
-			joe.weights.push_back({});
+			newAgent.weights.push_back({});
 			for (j = 0; j < structure[i]; j++)
 			{
-				joe.weights[i].push_back({});
+				newAgent.weights[i].push_back({});
 				for (l = 0; l < structure[i + 1]; l++)
 				{
-					joe.weights[i][j].push_back(weights[i][j][l]);
+					newAgent.weights[i][j].push_back(weights[i][j][l]);
 				}
 			}
 		}
-		return joe;
+		return newAgent;
 	}
 
 	void mutate(double rate)
@@ -167,6 +169,17 @@ public:
 			}
 		}
 		return output;
+	}
+
+	void update(vector<int> blueprint)
+	{
+		int i;
+		structure.clear();
+		for (i = 0; i < blueprint.size(); i++)
+		{
+			structure.push_back(blueprint[i]);
+		}
+		structureLengthMinusOne = structure.size() - 1;
 	}
 
 	void info()
@@ -400,8 +413,7 @@ public:
 	int numberOfAgents;
 	double scoreLog[logLength];
 	int stopTimer, logTimer;
-	double currentScore;
-	double maxScore;
+	double currentScore, maxScore;
 
 	void initialize()
 	{
@@ -434,10 +446,13 @@ public:
 		stopTimer = 0;
 		currentScore = 0;
 		maxScore = 0;
-		// for(i=0; i<)
+		for (i = 0; i < numberOfAgents; i++)
+		{
+			agents[i].update(structure);
+		}
 	}
 
-	void agentselection()
+	void agentSelection()
 	{
 		sort(agents.begin(), agents.begin() + agents.size());
 		int i;
@@ -531,7 +546,7 @@ void matchMakeGlobalPopulation()
 	}
 }
 
-bool updateScores()
+bool allSpeciesReady()
 {
 	int i;
 	bool mutateReady = true;
@@ -544,6 +559,18 @@ bool updateScores()
 		}
 	}
 	return mutateReady;
+}
+
+void collectAllSpecies(int num)
+{
+	allSpecies.clear();
+	int i;
+	for (i = 0; i < num; i++)
+	{
+		species newSpecies;
+		newSpecies.initialize();
+		allSpecies.push_back(newSpecies);
+	}
 }
 
 bool operator<(agent a1, agent a2)
@@ -561,11 +588,30 @@ bool operator<(agent a1, agent a2)
 // 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
 // }
 
+void speciesSelection()
+{
+	//
+}
+
 int main()
 {
 	srand(time(NULL));
 	randDouble();
-	
-	species hello;
-	hello.initialize();
+
+	collectAllSpecies(1);
+	while (true)
+	{
+		collectAllAgentPointers();
+		matchMakeGlobalPopulation();
+		int i;
+		for (i = 0; i < allSpecies.size(); i++)
+		{
+			allSpecies[i].agentSelection();
+			allSpecies[i].updateScore();
+		}
+		if (allSpeciesReady())
+		{
+			speciesSelection();
+		}
+	}
 }
