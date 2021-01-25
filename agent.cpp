@@ -9,7 +9,7 @@
 #define exposurePercentage 0.1 //divide the desired percentage by 2 to get accurate usage
 #define logLength 100
 #define mutationRate 0.1
-#define mutateThreshold 1000
+#define groundedThreshold 100
 using namespace std;
 
 double randDouble()
@@ -555,9 +555,10 @@ bool allSpeciesReady()
 	for (i = 0; i < allSpecies.size(); i++)
 	{
 		allSpecies[i].updateScore();
-		if (allSpecies[i].stopTimer < mutateThreshold)
+		if (allSpecies[i].stopTimer < groundedThreshold)
 		{
 			mutateReady = false;
+			break;
 		}
 	}
 	return mutateReady;
@@ -606,15 +607,25 @@ void speciesSelection()
 		allSpecies[i].mutate();
 		allSpecies[i].updateAllAttributes();
 	}
+	for (i = 0; i < allSpecies.size(); i++)
+	{
+		species newSpecies = allSpecies[i % top].copy();
+		newSpecies.mutate();
+		allSpecies[i].updateAllAttributes();
+		allSpecies.push_back(newSpecies);
+	}
 }
 
 // TODO: work on species mutate and updateAllAtridutes for both species and agents
+// check all species methods for completeness
+// maybe set ammount of species to a static int
+// Afterwards: make agents more efficient
 
 int main()
 {
 	srand(time(NULL));
 	randDouble();
-
+	
 	collectAllSpecies(1);
 	int maxLoop = 10;
 	while (maxLoop--)
