@@ -549,13 +549,21 @@ public:
 	void speciesSelection()
 	{
 		sort(allSpecies.begin(), allSpecies.begin() + allSpecies.size());
-		int i;
+		int i, j;
 		int top = (int)(allSpecies.size() * topSpeciesPercentage) + 1;
 		for (i = top; i < allSpecies.size(); i++)
 		{
-			allSpecies[i] = allSpecies[i % top].copy();
-			allSpecies[i].mutate();
-			allSpecies[i].updateAllAttributes();
+			allSpecies.pop_back();
+		}
+		for (i = 0; i < top; i++)
+		{
+			for (j = 0; j < allSpecies[i].structure.size() * 2 + 2; j++)
+			{
+				species newSpecies = allSpecies[i].copy();
+				newSpecies.mutate();
+				newSpecies.updateAllAttributes();
+				allSpecies.push_back(newSpecies);
+			}
 		}
 	}
 
@@ -616,14 +624,13 @@ public:
 
 // TODO: work on species mutate and updateAllAtridutes for both species and agents
 // check all species methods for completeness
-// maybe set ammount of species to a static int
 // Afterwards: make agents more efficient
 
 int main()
 {
 	srand(time(NULL));
 	randDouble();
-	
+
 	world newWorld;
 	newWorld.generateSpecies(1);
 	int maxLoop = 10;
