@@ -171,7 +171,7 @@ public:
 		return output;
 	}
 
-	void update(vector<int> blueprint)
+	void updateAllAttributes(vector<int> blueprint)
 	{
 		int i;
 		structure.clear();
@@ -419,7 +419,7 @@ public:
 	{
 		structure.push_back(boardSize * boardSize);
 		structure.push_back(boardSize * boardSize);
-		update();
+		updateAllAttributes();
 		int i;
 		for (i = 0; i < numberOfAgents; i++)
 		{
@@ -430,7 +430,7 @@ public:
 		}
 	}
 
-	void update()
+	void updateAllAttributes()
 	{
 		int i;
 		numberOfAgents = 0;
@@ -448,7 +448,7 @@ public:
 		maxScore = 0;
 		for (i = 0; i < numberOfAgents; i++)
 		{
-			agents[i].update(structure);
+			agents[i].updateAllAttributes(structure);
 		}
 	}
 
@@ -590,7 +590,12 @@ bool operator<(agent a1, agent a2)
 
 void speciesSelection()
 {
-	//
+	int i;
+	for (i = 0; i < allSpecies.size(); i++)
+	{
+		//
+		allSpecies[i].updateAllAttributes();
+	}
 }
 
 int main()
