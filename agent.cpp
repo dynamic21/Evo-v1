@@ -17,6 +17,16 @@ double randDouble()
 	return ((double)rand() / RAND_MAX) * 2 - 1;
 }
 
+bool operator<(agent a1, agent a2)
+{
+	return a1.score > a2.score;
+}
+
+bool operator<(species s1, species s2)
+{
+	return s1.maxScore > s2.maxScore;
+}
+
 class agent
 {
 public:
@@ -501,90 +511,12 @@ public:
 		}
 		stopTimer++;
 	}
-	
-	void mutate(){
+
+	void mutate()
+	{
 		//
 	}
 };
-
-vector<species> allSpecies;
-vector<agent *> allAgentPointers;
-
-void collectAllAgentPointers()
-{
-	int i, j;
-	allAgentPointers.clear();
-	for (i = 0; i < allSpecies.size(); i++)
-	{
-		for (j = 0; j < allSpecies[i].numberOfAgents; j++)
-		{
-			allSpecies[i].agents[j].score = 0;
-			allAgentPointers.push_back(&allSpecies[i].agents[j]);
-		}
-	}
-}
-
-void matchMakeGlobalPopulation()
-{
-	int i, j, tempRand;
-	int totalAgents = allAgentPointers.size();
-	int numberOfBattles = (int)(totalAgents * exposurePercentage) + 1;
-	agent *temp;
-	for (i = 0; i < totalAgents; i++)
-	{
-		temp = allAgentPointers[i];
-		tempRand = rand() % totalAgents;
-		allAgentPointers[i] = allAgentPointers[tempRand];
-		allAgentPointers[tempRand] = temp;
-	}
-	for (i = 0; i < totalAgents; i++)
-	{
-		for (j = 0; j < numberOfBattles; j++)
-		{
-			game match;
-			match.start(allAgentPointers[i], allAgentPointers[(i + j + 1) % totalAgents], false);
-			match.start(allAgentPointers[(i + j + 1) % totalAgents], allAgentPointers[i], false);
-		}
-	}
-}
-
-bool allSpeciesReady()
-{
-	int i;
-	bool mutateReady = true;
-	for (i = 0; i < allSpecies.size(); i++)
-	{
-		allSpecies[i].updateScore();
-		if (allSpecies[i].stopTimer < groundedThreshold)
-		{
-			mutateReady = false;
-			break;
-		}
-	}
-	return mutateReady;
-}
-
-void collectAllSpecies(int num)
-{
-	allSpecies.clear();
-	int i;
-	for (i = 0; i < num; i++)
-	{
-		species newSpecies;
-		newSpecies.initialize();
-		allSpecies.push_back(newSpecies);
-	}
-}
-
-bool operator<(agent a1, agent a2)
-{
-	return a1.score > a2.score;
-}
-
-bool operator<(species s1, species s2)
-{
-	return s1.maxScore > s2.maxScore;
-}
 
 // void timeFunction()
 // {
@@ -596,25 +528,91 @@ bool operator<(species s1, species s2)
 // 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
 // }
 
-void speciesSelection()
+class world
 {
-	sort(allSpecies.begin(), allSpecies.begin() + allSpecies.size());
-	int i;
-	int top = (int)(allSpecies.size() * topSpeciesPercentage) + 1;
-	for (i = top; i < allSpecies.size(); i++)
+public:
+	vector<species> allSpecies;
+	vector<agent *> allAgentPointers;
+
+	void generateSpecies(int num)
 	{
-		allSpecies[i] = allSpecies[i % top].copy();
-		allSpecies[i].mutate();
-		allSpecies[i].updateAllAttributes();
+		allSpecies.clear();
+		int i;
+		for (i = 0; i < num; i++)
+		{
+			species newSpecies;
+			newSpecies.initialize();
+			allSpecies.push_back(newSpecies);
+		}
 	}
-	for (i = 0; i < allSpecies.size(); i++)
+
+	void speciesSelection()
 	{
-		species newSpecies = allSpecies[i % top].copy();
-		newSpecies.mutate();
-		allSpecies[i].updateAllAttributes();
-		allSpecies.push_back(newSpecies);
+		sort(allSpecies.begin(), allSpecies.begin() + allSpecies.size());
+		int i;
+		int top = (int)(allSpecies.size() * topSpeciesPercentage) + 1;
+		for (i = top; i < allSpecies.size(); i++)
+		{
+			allSpecies[i] = allSpecies[i % top].copy();
+			allSpecies[i].mutate();
+			allSpecies[i].updateAllAttributes();
+		}
 	}
-}
+
+	bool allSpeciesReady()
+	{
+		int i;
+		bool mutateReady = true;
+		for (i = 0; i < allSpecies.size(); i++)
+		{
+			allSpecies[i].updateScore();
+			if (allSpecies[i].stopTimer < groundedThreshold)
+			{
+				mutateReady = false;
+				break;
+			}
+		}
+		return mutateReady;
+	}
+
+	void matchMakePopulation()
+	{
+		int i, j, tempRand;
+		int totalAgents = allAgentPointers.size();
+		int numberOfBattles = (int)(totalAgents * exposurePercentage) + 1;
+		agent *temp;
+		for (i = 0; i < totalAgents; i++)
+		{
+			temp = allAgentPointers[i];
+			tempRand = rand() % totalAgents;
+			allAgentPointers[i] = allAgentPointers[tempRand];
+			allAgentPointers[tempRand] = temp;
+		}
+		for (i = 0; i < totalAgents; i++)
+		{
+			for (j = 0; j < numberOfBattles; j++)
+			{
+				game match;
+				match.start(allAgentPointers[i], allAgentPointers[(i + j + 1) % totalAgents], false);
+				match.start(allAgentPointers[(i + j + 1) % totalAgents], allAgentPointers[i], false);
+			}
+		}
+	}
+
+	void collectAllAgentPointers()
+	{
+		int i, j;
+		allAgentPointers.clear();
+		for (i = 0; i < allSpecies.size(); i++)
+		{
+			for (j = 0; j < allSpecies[i].numberOfAgents; j++)
+			{
+				allSpecies[i].agents[j].score = 0;
+				allAgentPointers.push_back(&allSpecies[i].agents[j]);
+			}
+		}
+	}
+};
 
 // TODO: work on species mutate and updateAllAtridutes for both species and agents
 // check all species methods for completeness
@@ -626,21 +624,22 @@ int main()
 	srand(time(NULL));
 	randDouble();
 	
-	collectAllSpecies(1);
+	world newWorld;
+	newWorld.generateSpecies(1);
 	int maxLoop = 10;
 	while (maxLoop--)
 	{
-		collectAllAgentPointers();
-		matchMakeGlobalPopulation();
+		newWorld.collectAllAgentPointers();
+		newWorld.matchMakePopulation();
 		int i;
-		for (i = 0; i < allSpecies.size(); i++)
+		for (i = 0; i < newWorld.allSpecies.size(); i++)
 		{
-			allSpecies[i].agentSelection();
-			allSpecies[i].updateScore();
+			newWorld.allSpecies[i].agentSelection();
+			newWorld.allSpecies[i].updateScore();
 		}
-		if (allSpeciesReady())
+		if (newWorld.allSpeciesReady())
 		{
-			speciesSelection();
+			newWorld.speciesSelection();
 		}
 	}
 }
