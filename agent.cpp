@@ -654,4 +654,7 @@ int main()
 			newWorld.speciesSelection();
 		}
 	}
+	int x;
+	cout << "Yay!" << endl;
+	cin >> x;
 }
