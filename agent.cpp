@@ -437,6 +437,18 @@ public:
 		// for(i=0; i<)
 	}
 
+	void agentselection()
+	{
+		sort(agents.begin(), agents.begin() + agents.size());
+		int i;
+		int top = (int)(agents.size() * topAgentPercentage) + 1;
+		for (i = top; i < agents.size(); i++)
+		{
+			agents[i] = agents[i % top].copy();
+			agents[i].mutate(0.1);
+		}
+	}
+
 	species copy()
 	{
 		species newSpecies;
@@ -539,23 +551,21 @@ bool operator<(agent a1, agent a2)
 	return a1.score > a2.score;
 }
 
-// void allAgentSelection()
+// void timeFunction()
 // {
-// 	sort(allAgents.begin(), allAgents.begin() + allAgents.size());
-// 	int i;
-// 	int top = (int)(allAgents.size() * topAgentPercentage) + 1;
-// 	for (i = top; i < allAgents.size(); i++)
-// 	{
-// 		allAgents[i] = allAgents[i % top].copy();
-// 		allAgents[i].mutate(0.1);
+// 	clock_t start = clock();
+// 	int a = 1;
+// 	for (int i = 0; i < 10000000; i++) {
+// 		a = 0 - a;
 // 	}
+// 	cout << "Time: " << (clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << endl;
 // }
 
-void timeFunction()
+int main()
 {
 	srand(time(NULL));
 	randDouble();
-
+	
 	species hello;
 	hello.initialize();
 }
