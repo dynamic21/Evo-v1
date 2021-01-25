@@ -17,16 +17,6 @@ double randDouble()
 	return ((double)rand() / RAND_MAX) * 2 - 1;
 }
 
-bool operator<(agent a1, agent a2)
-{
-	return a1.score > a2.score;
-}
-
-bool operator<(species s1, species s2)
-{
-	return s1.maxScore > s2.maxScore;
-}
-
 class agent
 {
 public:
@@ -179,7 +169,7 @@ public:
 		return output;
 	}
 
-	void updateAllAttributes(vector<int> blueprint)
+	void updateMyAttributes(vector<int> blueprint)
 	{
 		int i;
 		structure.clear();
@@ -427,7 +417,7 @@ public:
 	{
 		structure.push_back(boardSize * boardSize);
 		structure.push_back(boardSize * boardSize);
-		updateAllAttributes();
+		updateMyAttributes();
 		int i;
 		for (i = 0; i < numberOfAgents; i++)
 		{
@@ -438,7 +428,7 @@ public:
 		}
 	}
 
-	void updateAllAttributes()
+	void updateMyAttributes()
 	{
 		int i;
 		numberOfAgents = 0;
@@ -454,9 +444,14 @@ public:
 		stopTimer = 0;
 		currentScore = 0;
 		maxScore = 0;
+	}
+
+	void updateAgentAttributes()
+	{
+		int i;
 		for (i = 0; i < numberOfAgents; i++)
 		{
-			agents[i].updateAllAttributes(structure);
+			agents[i].updateMyAttributes(structure);
 		}
 	}
 
@@ -561,7 +556,7 @@ public:
 			{
 				species newSpecies = allSpecies[i].copy();
 				newSpecies.mutate();
-				newSpecies.updateAllAttributes();
+				newSpecies.updateMyAttributes();
 				allSpecies.push_back(newSpecies);
 			}
 		}
@@ -622,8 +617,18 @@ public:
 	}
 };
 
+bool operator<(agent a1, agent a2)
+{
+	return a1.score > a2.score;
+}
+
+bool operator<(species s1, species s2)
+{
+	return s1.maxScore > s2.maxScore;
+}
+
 // TODO: work on species mutate and updateAllAtridutes for both species and agents
-// check all species methods for completeness
+// clean up the update attribute functions
 // Afterwards: make agents more efficient
 
 int main()
