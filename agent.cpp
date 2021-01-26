@@ -509,7 +509,41 @@ public:
 
 	void mutate()
 	{
-		//
+		// 0 = add layer, 1 = delete layer, 2 = add node, 3 = delete node
+		vector<bool> mutateChoices;
+		mutateChoices.push_back(0);
+		if (structure.size() > 2)
+		{
+			mutateChoices.push_back(1);
+		}
+		int i;
+		for (i = 0; i < structure.size() - 2; i++)
+		{
+			mutateChoices.push_back(2);
+			if (structure[i + 1] > 0)
+			{
+				mutateChoices.push_back(2);
+				mutateChoices.push_back(3);
+			}
+		};
+		switch (mutateChoices[rand() % mutateChoices.size()])
+		{
+		case 0:
+			/* code */
+			break;
+		case 1:
+			/* code */
+			break;
+		case 2:
+			/* code */
+			break;
+		case 3:
+			/* code */
+			break;
+
+		default:
+			break;
+		}
 	}
 };
 
